@@ -6,6 +6,7 @@ const highScoreElement = document.getElementById("high-score");
 const statusElement = document.getElementById("status");
 const startButton = document.getElementById("start-button");
 const referenceElement = document.getElementById("project-reference");
+const liveRegionElement = document.getElementById("live-region");
 
 const cellSize = 20;
 const gridSize = canvas.width / cellSize;
@@ -18,14 +19,24 @@ let score;
 let highScore = 0;
 let loopId = null;
 let speed = initialSpeed;
+let pendingDirection = null;
 
 referenceElement.textContent = PROJECT_REFERENCE;
+
+function updateLiveRegion(message = statusElement.textContent) {
+  liveRegionElement.textContent = `${message} Puntuación: ${score}. Récord: ${highScore}.`;
+}
 
 function randomCell() {
   return Math.floor(Math.random() * gridSize);
 }
 
 function placeFood() {
+  if (snake.length === gridSize * gridSize) {
+    endGame("¡Has ganado! Has llenado todo el tablero.");
+    return;
+  }
+
   do {
     food = { x: randomCell(), y: randomCell() };
   } while (snake.some((segment) => segment.x === food.x && segment.y === food.y));
@@ -38,12 +49,14 @@ function resetGame() {
     { x: 8, y: 10 },
   ];
   direction = { x: 1, y: 0 };
+  pendingDirection = null;
   score = 0;
   speed = initialSpeed;
   scoreElement.textContent = score;
   statusElement.textContent = "Partida en curso.";
   placeFood();
   draw();
+  updateLiveRegion();
 }
 
 function drawCell(x, y, color) {
@@ -61,13 +74,20 @@ function draw() {
   });
 }
 
-function endGame() {
+function endGame(message = `Fin de la partida. Puntuación final: ${score}.`) {
   clearInterval(loopId);
   loopId = null;
-  statusElement.textContent = `Fin de la partida. Puntuación final: ${score}.`;
+  pendingDirection = null;
+  statusElement.textContent = message;
+  updateLiveRegion(message);
 }
 
 function step() {
+  if (pendingDirection) {
+    direction = pendingDirection;
+    pendingDirection = null;
+  }
+
   const head = {
     x: snake[0].x + direction.x,
     y: snake[0].y + direction.y,
@@ -94,6 +114,10 @@ function step() {
     scoreElement.textContent = score;
     highScoreElement.textContent = highScore;
     placeFood();
+    if (!loopId) {
+      draw();
+      return;
+    }
 
     if (speed > 60) {
       speed -= 10;
@@ -105,14 +129,19 @@ function step() {
   }
 
   draw();
+  updateLiveRegion();
 }
 
 function setDirection(nextX, nextY) {
+  if (pendingDirection) {
+    return;
+  }
+
   if (direction.x === -nextX && direction.y === -nextY) {
     return;
   }
 
-  direction = { x: nextX, y: nextY };
+  pendingDirection = { x: nextX, y: nextY };
 }
 
 document.addEventListener("keydown", (event) => {
