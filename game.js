@@ -116,6 +116,10 @@ function setDirection(nextX, nextY) {
 }
 
 document.addEventListener("keydown", (event) => {
+  if (!loopId) {
+    return;
+  }
+
   const actions = {
     ArrowUp: () => setDirection(0, -1),
     ArrowDown: () => setDirection(0, 1),
