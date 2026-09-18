@@ -127,7 +127,7 @@ document.addEventListener("keydown", (event) => {
     d: () => setDirection(1, 0),
   };
 
-  const action = actions[event.key];
+  const action = actions[event.key] || actions[event.key.toLowerCase()];
   if (action) {
     event.preventDefault();
     action();
